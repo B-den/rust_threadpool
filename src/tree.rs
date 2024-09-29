@@ -1,42 +1,42 @@
-use std::rc::Rc;
+use std::iter::Iterator;
 
 pub struct Node<T: Copy> {
     pub val: T,
-    next: Option<Rc<Node<T>>>,
+    children: Vec<Node<T>>,
 }
 
-pub struct Stack<T: Copy> {
-    head: Option<Rc<Node<T>>>,
-}
-
-impl<T: Copy> Stack<T> {
-    pub fn new() -> Self {
-        Self {
-            head: None,
+impl<T: Copy> Node<T> {
+    pub fn new(val: T) -> Self {
+        Self{
+            val,
+            children: vec![],
         }
     }
 
-    pub fn push(&mut self, val: &T) {
-        let new_node = Rc::new(Node::<T>{
-            val: *val,
-            next: self.head.clone(),
-        });
+    pub fn iter(&self) -> impl Iterator<Item = &Node<T>> {
+        self.children.iter()
+    }
 
-        self.head = Some(new_node);
+    pub fn iter_mut(&mut self) -> impl Iterator<Item = &mut Node<T>> {
+        self.children.iter_mut()
+    }
+
+    pub fn push(&mut self, val: T) {
+        self.children.push(Node::<T>::new(val));
     }
 }
 
-impl<T: Copy+std::fmt::Display> std::fmt::Display for Stack<T> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
-        fn resursive_print<T: Copy+std::fmt::Display>(f: &mut std::fmt::Formatter<'_>, node: &Option<Rc<Node<T>>>) -> Result<(), std::fmt::Error> {
-            if let Some(node) = node {
-                resursive_print(f, &node.next)?;
-                return write!(f, "{},", node.val);
-            };
+// pub struct Tree<T: Copy> {
+//     pub root: Option<Rc<Node<T>>>,
+// }
 
-            Ok(())
-        }
+// impl<T: Copy> Tree<T> {
+//     pub fn new(val: T) -> Self {
+//         Self { root: Some(Rc::new(Node::new(val))) }
+//     }
 
-        resursive_print(f, &self.head)
-    }
-}
+//     pub fn root(&mut self) -> Option<Rc<Node<T>>> {
+//         self.root.clone()
+//     }
+// }
+
