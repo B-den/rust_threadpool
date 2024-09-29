@@ -74,6 +74,8 @@ fn exec_test() {
 }
 
 fn main() {
+    exec_test();
+
     let mut exer = executor::ThPool::new(2);
 
     // let tree_orig = Arc::new(Mutex::new(tree::Node::<i32>::new(0)));
