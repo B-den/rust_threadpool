@@ -26,8 +26,9 @@ impl<T: Copy> Node<T> {
     }
 }
 
-// pub struct Tree<T: Copy> {
-//     pub root: Option<Rc<Node<T>>>,
+
+// pub struct Tree<'a, T: Copy> {
+//     pub root: &'a mut Node::<T>,
 // }
 
 // impl<T: Copy> Tree<T> {

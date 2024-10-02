@@ -59,6 +59,7 @@ where F: Fn() -> () + 'static + std::marker::Send {
             let (signal_sender, signal_receiver) = mpsc::channel();
             
             for i in 0..executors_num {
+                let tasks_cnt = active_tasks_cnt.clone();
                 let ready_sender = signal_sender.clone();
                 let (task_sender, task_receiver) = mpsc::channel::<F>();
 
@@ -68,6 +69,7 @@ where F: Fn() -> () + 'static + std::marker::Send {
                     
                     while let Ok(task) = task_receiver.recv() {
                         task();
+                        { let mut cnt = tasks_cnt.lock().unwrap(); *cnt -= 1; }
                         let _ = ready_sender.send(id);
                     }
                 };
@@ -89,7 +91,6 @@ where F: Fn() -> () + 'static + std::marker::Send {
                 if let Ok(task) = Self::next_task(&task_chan) {
                     if let Some(exec_id) = Self::next_executor(&signal_receiver) {
                         send_task(exec_id, task);
-                        { let mut cnt = active_tasks_cnt.lock().unwrap(); *cnt -= 1; }
                     } else {
                         eprintln!("all exucutors are dead! exiting");
                         break;

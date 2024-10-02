@@ -2,7 +2,7 @@
 mod executor;
 mod tree;
 
-use std::sync::{Arc};
+use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::Duration;
 use std::time::Instant;
@@ -74,7 +74,7 @@ fn exec_test() {
 }
 
 fn main() {
-    exec_test();
+    // exec_test();
 
     let mut exer = executor::ThPool::new(2);
 
@@ -84,10 +84,10 @@ fn main() {
     //     for i in 1..5 {
     //         tree.push(i);
     //     }
-    
+
     //     tree.iter().for_each(|n| print!("{} ", n.val));
     //     println!();
-    
+
     //     let mut i = 11;
     //     let mut j = 111;
     //     for child in tree.iter_mut() {
@@ -103,35 +103,48 @@ fn main() {
 
     // }
 
-    // let tree_orig = Arc::new(Mutex::new(tree::Node::<i32>::new(0)));
-    let mut tree = tree::Node::<i32>::new(0);
-    for i in 1..5 {
-        tree.push(i);
-    }
-
-    tree.iter().for_each(|n| print!("{} ", n.val));
-    println!();
-
-    let mut i = 11;
-    let mut j = 111;
-    for child in tree.iter_mut() {
-        child.push(i);
-        for ch in child.iter_mut() {
-            ch.push(j);
-            j += 1;
-            ch.push(j);
-            j += 1;
+    let tree_orig = Arc::new(Mutex::new(tree::Node::<i32>::new(0)));
+    // let mut tree = tree::Node::<i32>::new(0);
+    {
+        let mut tree = tree_orig.lock().unwrap();
+        for i in 1..5 {
+            tree.push(i);
         }
-        i += 1;
-    }
 
+        tree.iter().for_each(|n| print!("{} ", n.val));
+        println!();
+
+        let mut i = 11;
+        let mut j = 111;
+        for child in tree.iter_mut() {
+            child.push(i);
+            for ch in child.iter_mut() {
+                ch.push(j);
+                j += 1;
+                ch.push(j);
+                j += 1;
+            }
+            i += 1;
+        }
+    }
 
     fn node_print<S: Into<String> + Clone>(prefix: S) -> impl Fn(&Node<i32>) {
         move |node: &Node<i32>| {
             println!("{}{}", prefix.clone().into(), node.val);
-            node.iter().for_each(node_print(prefix.clone().into() + "\t"));                
+            node.iter()
+                .for_each(node_print(prefix.clone().into() + "\t"));
         }
     }
+
+
+    let tree_cp = tree_orig.clone();
+    {
+        let mut tree = tree_cp.lock().unwrap();
+        // tree.iter().for_each(node_print(""));
+        tree.val = 5;
+    }
+
+    println!();
 
     // let tree = tree_orig.clone();
     // let _ = exer.enqueue(move || {
@@ -139,11 +152,16 @@ fn main() {
     //     locked_tree.iter().for_each(node_print("".to_string()));
     // });
 
-    let tree_cp = Arc::new(tree);
     let _ = exer.enqueue(move || {
-        tree_cp.iter().for_each(node_print(""));
+        let mut t = tree_cp.lock().unwrap();
+        t.val = 678678;
+        println!("inside exer: {}", t.val);
+        // t.iter_mut().for_each(|node| node.val = 7);
     });
 
     exer.finish();
-    
+
+    let tree = tree_orig.lock().unwrap();
+    println!("in main: {}", tree.val);
+    // tree.iter().for_each(node_print(""));
 }
